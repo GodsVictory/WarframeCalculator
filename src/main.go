@@ -6,12 +6,12 @@ import (
 	"math"
 	"runtime"
 	"sort"
+	"strings"
 	"time"
 )
 
 func main() {
 	var allowedMods int = 8
-	// var startTime int64 = time.Now().UnixNano() / int64(time.Second)
 	var NGoRoutines = MaxParallelism()
 
 	elementMods, otherMods := lib.GetModArrays()
@@ -37,42 +37,41 @@ func main() {
 		}
 	}
 
-    c := make(chan int, NGoRoutines)
     runtime.GOMAXPROCS(NGoRoutines)
 	var ranks [][]Rank = make([][]Rank, NGoRoutines)
 	var status []bool = make([]bool, NGoRoutines)
-	var completed []int = make([]int, NGoRoutines)
 	var totalBuilds int = len(allModSets)
-    chunk := totalBuilds / NGoRoutines
 
     for i := 0; i < NGoRoutines; i++ {
-		status[i] = false
-        go func(start int, i int) {
-            end := start + chunk
-
-            if end > totalBuilds {
-                end = totalBuilds
-            }
-
-            for j := start; j < end; j++ {
+        go func(i int) {
+            for j := i; j < totalBuilds; j += NGoRoutines {
 				var rank Rank = simulate(lib.Weapons[0], allModSets[j])
 				ranks[i] = append(ranks[i], rank)
-				completed[i] = j - start + 1
             }
 			status[i] = true
-            c <- 1
-        }(i * chunk, i)
+        }(i)
     }
 
+	var startTime int64 = time.Now().UnixNano() / int64(time.Second)
+	time.Sleep(1 * time.Second)
 	for i := range status {
 		for !status[i] {
 			var buildsCompleted int = 0
-			for _, v := range completed {
-				buildsCompleted += v
+			for _, v := range ranks {
+				buildsCompleted += len(v)
 			}
 			var percentCompleted float64 = float64(buildsCompleted) / float64(totalBuilds) * 100
-			fmt.Printf("\r%.2f%%", percentCompleted)
-			time.Sleep(1 * time.Second)
+			var currentTime int64 = time.Now().UnixNano() / int64(time.Second)
+			var bps int = buildsCompleted/int(currentTime - startTime)
+			fmt.Printf("\r[%s%s] %5.2f%% %14s %5dbps %3ds eta",
+				strings.Repeat("#", int(percentCompleted)),
+				strings.Repeat("-", 100 - int(percentCompleted)),
+				percentCompleted,
+				fmt.Sprintf("(%d/%d)", buildsCompleted, totalBuilds),
+				bps,
+				(totalBuilds - buildsCompleted) / bps,
+			)
+			time.Sleep(50 * time.Millisecond)
 		}
 	}
 	var parsedRanks []Rank
@@ -94,22 +93,23 @@ func main() {
 }
 
 func printRank(rank Rank) {
-	fmt.Printf("\rWeapon: %s\n", rank.Weapon)
-	fmt.Printf("TTK: %d\n", rank.TTK)
-	fmt.Printf("DPS: %.2f\n", rank.DPS)
-	fmt.Printf("AvgHit: %.2f\n", rank.AvgHit)
-	fmt.Printf("DoT: %.2f\n", rank.DoT)
-	fmt.Printf("Attack Speed: %.2f\n", rank.attackSpeed)
-	fmt.Printf("Crit Chance: %.2f\n", rank.CritChance)
-	fmt.Printf("Crit Multi: %.2f\n", rank.CritMulti)
-	fmt.Printf("Status Chance: %.2f\n", rank.StatusChance)
-	fmt.Println("Build")
+	fmt.Printf("\rBest Build%s\n", strings.Repeat(" ", 150))
+	fmt.Printf("  Weapon: %s\n", rank.Weapon)
+	fmt.Printf("  TTK: %d\n", rank.TTK)
+	fmt.Printf("  DPS: %.2f\n", rank.DPS)
+	fmt.Printf("  AvgHit: %.2f\n", rank.AvgHit)
+	fmt.Printf("  DoT: %.2f\n", rank.DoT)
+	fmt.Printf("  Attack Speed: %.2f\n", rank.attackSpeed)
+	fmt.Printf("  Crit Chance: %.2f\n", rank.CritChance)
+	fmt.Printf("  Crit Multi: %.2f\n", rank.CritMulti)
+	fmt.Printf("  Status Chance: %.2f\n", rank.StatusChance)
+	fmt.Println("  Build")
 	for _, m := range rank.Set {
-		fmt.Printf("  %s\n", m.Name)
+		fmt.Printf("    %s\n", m.Name)
 	}
-	fmt.Println("Damage")
+	fmt.Println("  Damage")
 	for _, d := range rank.Damages {
-		fmt.Printf("  %s: %.2f\n", d.Type, d.Value)
+		fmt.Printf("    %s: %.2f\n", d.Type, d.Value)
 	}
 	return
 }
@@ -254,15 +254,7 @@ func simulate(weapon lib.Weapon, modSet []lib.Mod) (stats Rank) {
 	for _, d := range damages {
 		totalDamage += d.Value
 	}
-	var viralDistribution float64
-	var corrosiveDistribution float64
-	for _, d := range damages {
-		if d.Type == "viral" {
-			viralDistribution = d.Value / totalDamage
-		} else if d.Type == "viral" {
-			corrosiveDistribution = d.Value / totalDamage
-		}
-	}
+
 	var totalDps []float64
 	var totalAvgHit []float64
 	var totalDot []float64
@@ -271,16 +263,10 @@ func simulate(weapon lib.Weapon, modSet []lib.Mod) (stats Rank) {
 		var enemies []lib.Enemy
 		enemies = lib.SpawnEnemies(lvl)
 		for _, e := range enemies {
-			var ttk int = -1
-			for e.Health.Value > 0 {
-				ttk += 1
-				for _, d := range damages {
-					dps, avgHit, dot := e.Hit(baseDamage, baseModifier, d.Value / totalDamage, d, viralDistribution, corrosiveDistribution, moddedStatusChance, moddedStatusDuration, avgDamageMulti, moddedAttackSpeed, getModifierForType(e.Faction, modSet))
-					totalDps = append(totalDps, dps)
-					totalAvgHit = append(totalAvgHit, avgHit)
-					totalDot = append(totalDot, dot)
-				}
-			}
+			ttk, dps, avgHit, dot := e.Kill(damages, totalDamage, baseDamage, baseModifier, moddedStatusChance, moddedStatusDuration, avgDamageMulti, moddedAttackSpeed, getModifierForType(e.Faction, modSet))
+			totalDps = append(totalDps, dps)
+			totalAvgHit = append(totalAvgHit, avgHit)
+			totalDot = append(totalDot, dot)
 			totalTtk += ttk
 		}
 	}
