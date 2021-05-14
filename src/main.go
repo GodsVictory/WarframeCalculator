@@ -1,0 +1,394 @@
+package main
+
+import (
+	"WFCalc/src/lib"
+	"fmt"
+	"math"
+	"runtime"
+	"sort"
+	"time"
+)
+
+func main() {
+	var allowedMods int = 8
+	// var startTime int64 = time.Now().UnixNano() / int64(time.Second)
+	var NGoRoutines = MaxParallelism()
+
+	elementMods, otherMods := lib.GetModArrays()
+	var elementModsLen int = len(elementMods)
+
+	var allModSets [][]lib.Mod
+	for i := 0; i <= 4; i++ {
+		var totalBuilds int = int(math.Pow(float64(elementModsLen), float64(i)))
+		var otherModSets [][]lib.Mod = getCombinations(otherMods, allowedMods - i)
+		for _, otherModSet := range otherModSets {
+			if hasDup(otherModSet) {
+				continue
+			}
+			for j := 0; j < totalBuilds; j++ {
+				var elementModSet []lib.Mod = ConvertToLengthBase(j, elementMods, elementModsLen, i)
+				var modSet []lib.Mod
+				modSet = append(otherModSet, elementModSet...)
+				if len(modSet) < allowedMods {
+					continue
+				}
+				allModSets = append(allModSets, modSet)
+			}
+		}
+	}
+
+    c := make(chan int, NGoRoutines)
+    runtime.GOMAXPROCS(NGoRoutines)
+	var ranks [][]Rank = make([][]Rank, NGoRoutines)
+	var status []bool = make([]bool, NGoRoutines)
+	var completed []int = make([]int, NGoRoutines)
+	var totalBuilds int = len(allModSets)
+    chunk := totalBuilds / NGoRoutines
+
+    for i := 0; i < NGoRoutines; i++ {
+		status[i] = false
+        go func(start int, i int) {
+            end := start + chunk
+
+            if end > totalBuilds {
+                end = totalBuilds
+            }
+
+            for j := start; j < end; j++ {
+				var rank Rank = simulate(lib.Weapons[0], allModSets[j])
+				ranks[i] = append(ranks[i], rank)
+				completed[i] = j - start + 1
+            }
+			status[i] = true
+            c <- 1
+        }(i * chunk, i)
+    }
+
+	for i := range status {
+		for !status[i] {
+			var buildsCompleted int = 0
+			for _, v := range completed {
+				buildsCompleted += v
+			}
+			var percentCompleted float64 = float64(buildsCompleted) / float64(totalBuilds) * 100
+			fmt.Printf("\r%.2f%%", percentCompleted)
+			time.Sleep(1 * time.Second)
+		}
+	}
+	var parsedRanks []Rank
+	for _, rankArray := range ranks {
+		for _, rank := range rankArray {
+			parsedRanks = append(parsedRanks, rank)
+		}
+	}
+
+	sort.SliceStable(parsedRanks, func(i, j int) bool {
+		if parsedRanks[i].TTK == parsedRanks[j].TTK {
+			return parsedRanks[i].DPS < parsedRanks[j].DPS
+		} else {
+			return parsedRanks[i].TTK < parsedRanks[j].TTK
+		}
+	})
+	printRank(parsedRanks[0])
+	return
+}
+
+func printRank(rank Rank) {
+	fmt.Printf("\rWeapon: %s\n", rank.Weapon)
+	fmt.Printf("TTK: %d\n", rank.TTK)
+	fmt.Printf("DPS: %.2f\n", rank.DPS)
+	fmt.Printf("AvgHit: %.2f\n", rank.AvgHit)
+	fmt.Printf("DoT: %.2f\n", rank.DoT)
+	fmt.Printf("Attack Speed: %.2f\n", rank.attackSpeed)
+	fmt.Printf("Crit Chance: %.2f\n", rank.CritChance)
+	fmt.Printf("Crit Multi: %.2f\n", rank.CritMulti)
+	fmt.Printf("Status Chance: %.2f\n", rank.StatusChance)
+	fmt.Println("Build")
+	for _, m := range rank.Set {
+		fmt.Printf("  %s\n", m.Name)
+	}
+	fmt.Println("Damage")
+	for _, d := range rank.Damages {
+		fmt.Printf("  %s: %.2f\n", d.Type, d.Value)
+	}
+	return
+}
+
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+	return false
+}
+
+func getModifierForType(Type string, set []lib.Mod) (value float64) {
+	value = 0
+	for _, mod := range set {
+		for _, modifier := range mod.Modifiers {
+			if modifier.Type == Type {
+				value += modifier.Value
+			}
+		}
+	}
+	return
+}
+
+func getProcCount(weapon lib.Weapon, modSet []lib.Mod) (procCount int) {
+	var damages []lib.Damage
+	for _, d := range weapon.Damage {
+		var nd lib.Damage = lib.GetDamageInfo(d.Type)
+		damages = append(damages, nd)
+	}
+
+	var activeElements []string
+	for _, mod := range modSet {
+		for _, modifier := range mod.Modifiers {
+			for _, element := range lib.Elements {
+				if  modifier.Type == element {
+					activeElements = append(activeElements, element)
+				}
+			}
+		}
+	}
+
+	for len(activeElements) >= 2 {
+		var firstElement string = activeElements[0]
+		activeElements = activeElements[1:]
+		var secondElement string = activeElements[0]
+		activeElements = activeElements[1:]
+		for _, d := range lib.Damages {
+			if contains(d.Mix, firstElement) && contains(d.Mix, secondElement) {
+				var nd lib.Damage = lib.GetDamageInfo(d.Type)
+				damages = append(damages, nd)
+				break
+			}
+		}
+	}
+	if len(activeElements) > 0 {
+		var nd lib.Damage = lib.GetDamageInfo(activeElements[0])
+		nd.Modifier = getModifierForType(nd.Type, modSet)
+		damages = append(damages, nd)
+	}
+	procCount = len(damages)
+	return
+}
+
+func simulate(weapon lib.Weapon, modSet []lib.Mod) (stats Rank) {
+	var damages []lib.Damage
+	var moddedCritChance = weapon.CritChance * (1 + getModifierForType("critChance", modSet))
+	var moddedCritMulti = weapon.CritMulti * (1 + getModifierForType("critMulti", modSet))
+	var moddedStatusChance = weapon.StatusChance * (1 + getModifierForType("statusChance", modSet))
+	var moddedStatusDuration = getModifierForType("statusDuration", modSet)
+	var moddedAttackSpeed = 1 / (weapon.AttackSpeed * (1 + getModifierForType("attackSpeed", modSet)) * (1 + getModifierForType("attackSpeedMulti", modSet)))
+	var avgDamageMulti = 1 + moddedCritChance * (moddedCritMulti - 1)
+	var baseModifier float64
+	var procCount int = getProcCount(weapon, modSet)
+
+	for _, mod := range modSet {
+		for _, modifier := range mod.Modifiers {
+			if mod.Name == "Condition Overload" {
+				baseModifier += modifier.Value * float64(procCount)
+			} else if modifier.Type == "base" {
+				baseModifier += modifier.Value
+			}
+		}
+	}
+
+
+	var baseDamage float64
+	for _, d := range weapon.Damage {
+		var nd lib.Damage = lib.GetDamageInfo(d.Type)
+		nd.Base = d.Value
+		nd.Modifier = getModifierForType(nd.Type, modSet)
+		nd.Value = d.Value * (1 + baseModifier) * (1 + nd.Modifier)
+		damages = append(damages, nd)
+		baseDamage += nd.Base
+	}
+
+	var activeElements []string
+	for _, mod := range modSet {
+		for _, modifier := range mod.Modifiers {
+			for _, element := range lib.Elements {
+				if modifier.Type == element {
+					var exists bool = false
+					for _, e := range activeElements {
+						if element == e {
+							exists = true
+						}
+					}
+					if !exists {
+						activeElements = append(activeElements, element)
+					}
+				}
+			}
+		}
+	}
+
+	for len(activeElements) >= 2 {
+		var firstElement string = activeElements[0]
+		activeElements = activeElements[1:]
+		var secondElement string = activeElements[0]
+		activeElements = activeElements[1:]
+		for _, d := range lib.Damages {
+			if contains(d.Mix, firstElement) && contains(d.Mix, secondElement) {
+				var nd lib.Damage = lib.GetDamageInfo(d.Type)
+				nd.Modifier = getModifierForType(firstElement, modSet) + getModifierForType(secondElement, modSet)
+				nd.Base = baseDamage
+				nd.Value = baseDamage * (1 + baseModifier) * (nd.Modifier)
+				damages = append(damages, nd)
+				break
+			}
+		}
+	}
+	if len(activeElements) > 0 {
+		var nd lib.Damage = lib.GetDamageInfo(activeElements[0])
+		nd.Modifier = getModifierForType(nd.Type, modSet)
+		nd.Base = baseDamage
+		nd.Value = baseDamage * (1 + baseModifier) * (nd.Modifier)
+		damages = append(damages, nd)
+	}
+
+	var totalDamage float64
+	for _, d := range damages {
+		totalDamage += d.Value
+	}
+	var viralDistribution float64
+	var corrosiveDistribution float64
+	for _, d := range damages {
+		if d.Type == "viral" {
+			viralDistribution = d.Value / totalDamage
+		} else if d.Type == "viral" {
+			corrosiveDistribution = d.Value / totalDamage
+		}
+	}
+	var totalDps []float64
+	var totalAvgHit []float64
+	var totalDot []float64
+	var totalTtk int
+	for _, lvl := range []int{10, 25, 50, 75, 100, 150} {
+		var enemies []lib.Enemy
+		enemies = lib.SpawnEnemies(lvl)
+		for _, e := range enemies {
+			var ttk int = -1
+			for e.Health.Value > 0 {
+				ttk += 1
+				for _, d := range damages {
+					dps, avgHit, dot := e.Hit(baseDamage, baseModifier, d.Value / totalDamage, d, viralDistribution, corrosiveDistribution, moddedStatusChance, moddedStatusDuration, avgDamageMulti, moddedAttackSpeed, getModifierForType(e.Faction, modSet))
+					totalDps = append(totalDps, dps)
+					totalAvgHit = append(totalAvgHit, avgHit)
+					totalDot = append(totalDot, dot)
+				}
+			}
+			totalTtk += ttk
+		}
+	}
+
+	var avgDps float64
+	for _, v := range totalDps {
+		avgDps += v
+	}
+	avgDps = avgDps / float64(len(totalDps))
+
+	var avgHit float64
+	for _, v := range totalAvgHit {
+		avgHit += v
+	}
+	avgHit = avgHit / float64(len(totalAvgHit))
+
+	var avgDot float64
+	var countDot int
+	for _, v := range totalDot {
+		if v > 0 {
+			avgDot += v
+			countDot++
+		}
+	}
+	avgDot = avgDot / float64(countDot)
+
+	return Rank{
+		Weapon: weapon.Name,
+		DPS: avgDps,
+		TTK: totalTtk,
+		AvgHit: avgHit,
+		DoT: avgDot,
+		Set: modSet,
+		Damages: damages,
+		StatusChance: moddedStatusChance,
+		CritChance: moddedCritChance,
+		CritMulti: moddedCritMulti,
+		attackSpeed: weapon.AttackSpeed * (1 + getModifierForType("attackSpeed", modSet)) * (1 + getModifierForType("attackSpeedMulti", modSet)),
+	}
+}
+
+func ConvertToLengthBase(n int, arr []lib.Mod, len int, L int) (set []lib.Mod) {
+	for i := 0; i < L; i++ {
+		for _, m := range set {
+			if m.Name == arr[n % len].Name {
+				set = []lib.Mod{}
+				return
+			}
+		}
+        set = append(set, arr[n % len])
+        n = int(n / len)
+    }
+	return
+}
+
+func hasDup(mods []lib.Mod) (result bool) {
+	for i, m1 := range mods {
+		for j, m2 := range mods {
+			if i != j && m1.Name == m2.Name {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func combinationUtil(arr []lib.Mod, data []lib.Mod, start int, end int, index int, r int, sets *[][]lib.Mod) (set []lib.Mod) {
+	if (index == r)	{
+		for j :=0; j < r; j++ {
+			set = append(set, data[j])
+		}
+		*sets = append(*sets, set)
+		return
+	}
+	for i := start; i <= end && end-i+1 >= r-index; i++ {
+		data[index] = arr[i];
+		combinationUtil(arr, data, i+1, end, index+1, r, sets)
+	}
+	return
+}
+
+func getCombinations(arr []lib.Mod, r int) (out [][]lib.Mod) {
+	var data []lib.Mod = make([]lib.Mod, len(arr))
+	copy(data, arr)
+	var n int = len(arr)
+	combinationUtil(arr, data, 0, n-1, 0, r, &out)
+	return
+}
+
+func MaxParallelism() int {
+	maxProcs := runtime.GOMAXPROCS(0)
+	numCPU := runtime.NumCPU()
+	if maxProcs < numCPU {
+		return maxProcs
+	}
+	return numCPU
+}
+
+type Rank struct {
+	Weapon string
+	DPS float64
+	TTK int
+	AvgHit float64
+	DoT float64
+	Set []lib.Mod
+	Damages []lib.Damage
+	StatusChance float64
+	CritChance float64
+	CritMulti float64
+	attackSpeed float64
+}
