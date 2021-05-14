@@ -22,7 +22,7 @@ func setupMods() (mods []Mod) {
 		},
 	})
 	mods = append(mods, Mod{
-		Name: "Northern Wind",
+		Name: "North Wind",
 		Modifiers: []Modifier{
 			{ Type: "cold", Value: 0.9 },
 		},
@@ -125,6 +125,12 @@ func setupMods() (mods []Mod) {
 	return
 }
 func myMods() (mods []Mod) {
+	// mods = append(mods, Mod{
+	// 	Name: "Fury",
+	// 	Modifiers: []Modifier{
+	// 		{ Type: "attackSpeed", Value: 0.3 },
+	// 	},
+	// })
 	mods = append(mods, Mod{
 		Name: "Fever Strike",
 		Modifiers: []Modifier{
@@ -132,7 +138,7 @@ func myMods() (mods []Mod) {
 		},
 	})
 	mods = append(mods, Mod{
-		Name: "Northern Wind",
+		Name: "North Wind",
 		Modifiers: []Modifier{
 			{ Type: "cold", Value: 0.9 },
 		},

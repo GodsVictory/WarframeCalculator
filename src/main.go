@@ -2,6 +2,7 @@ package main
 
 import (
 	"WFCalc/src/lib"
+	"flag"
 	"fmt"
 	"math"
 	"runtime"
@@ -11,8 +12,18 @@ import (
 )
 
 func main() {
-	var allowedMods int = 8
+	var allowedMods int
+	flag.IntVar(&allowedMods, "mods", 8, "Mod Slots")
+	var weaponName string
+	flag.StringVar(&weaponName, "weapon", "Orthos Prime", "Weapon to test")
+	flag.Parse()
 	var NGoRoutines = MaxParallelism()
+
+	weapon, err := lib.GetWeaponByName(weaponName)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	elementMods, otherMods := lib.GetModArrays()
 	var elementModsLen int = len(elementMods)
@@ -45,7 +56,7 @@ func main() {
     for i := 0; i < NGoRoutines; i++ {
         go func(i int) {
             for j := i; j < totalBuilds; j += NGoRoutines {
-				var rank Rank = simulate(lib.Weapons[0], allModSets[j])
+				var rank Rank = simulate(weapon, allModSets[j])
 				ranks[i] = append(ranks[i], rank)
             }
 			status[i] = true
@@ -175,7 +186,8 @@ func getProcCount(weapon lib.Weapon, modSet []lib.Mod) (procCount int) {
 	return
 }
 
-func simulate(weapon lib.Weapon, modSet []lib.Mod) (stats Rank) {
+func simulate(weapon lib.Weapon, inModSet []lib.Mod) (stats Rank) {
+	var modSet []lib.Mod = append(inModSet, weapon.Mod...)
 	var damages []lib.Damage
 	var moddedCritChance = weapon.CritChance * (1 + getModifierForType("critChance", modSet))
 	var moddedCritMulti = weapon.CritMulti * (1 + getModifierForType("critMulti", modSet))
@@ -299,7 +311,7 @@ func simulate(weapon lib.Weapon, modSet []lib.Mod) (stats Rank) {
 		TTK: totalTtk,
 		AvgHit: avgHit,
 		DoT: avgDot,
-		Set: modSet,
+		Set: inModSet,
 		Damages: damages,
 		StatusChance: moddedStatusChance,
 		CritChance: moddedCritChance,

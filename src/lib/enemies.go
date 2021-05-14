@@ -83,11 +83,11 @@ func (e Enemy) GetShieldAtLevel(level int) (shield float64) {
 
 func (e Enemy) GetDamageModifier(damage Damage, corrosiveEffect float64, heatEffect float64) (damageModifier float64) {
 	var armorBonus float64 = damage.GetBonus(e.Armor.Type)
-	var armorPenalty float64 = damage.GetPenalty(e.Armor.Type)
+	var armorPenalty float64 = -damage.GetPenalty(e.Armor.Type)
 	var healthBonus float64 = damage.GetBonus(e.Health.Type)
-	var healthPenalty float64 = damage.GetPenalty(e.Health.Type)
+	var healthPenalty float64 = -damage.GetPenalty(e.Health.Type)
 	var shieldBonus float64 = damage.GetBonus(e.Shield.Type)
-	var shieldPenalty float64 = damage.GetPenalty(e.Shield.Type)
+	var shieldPenalty float64 = -damage.GetPenalty(e.Shield.Type)
 	var currentArmor float64 = e.Armor.Value * (1 - corrosiveEffect) * (1 - heatEffect)
 
     if e.Shield.Value > 0 && damage.Type != "toxin" {
@@ -190,7 +190,7 @@ func SpawnEnemies(lvl int) (enemies []Enemy) {
 		Health: Health{ Type: "cloned", Value: 300 },
 		Armor: Armor{ Type: "alloy", Value: 500 },
 		Level: 8,
-		Count: 25,
+		Count: 40,
 	})
 	enemies = append(enemies, Enemy{
 		Name: "Hyekka Master",
@@ -238,7 +238,7 @@ func SpawnEnemies(lvl int) (enemies []Enemy) {
 		Health: Health{ Type: "robotic", Value: 60 },
 		Shield: Shield{ Type: "shield", Value: 150 },
 		Level: 1,
-		Count: 50,
+		Count: 25,
 	})
 	enemies = append(enemies, Enemy{
 		Name: "Oxium Osprey",
@@ -247,7 +247,7 @@ func SpawnEnemies(lvl int) (enemies []Enemy) {
 		Armor: Armor{ Type: "ferrite", Value: 40 },
 		Shield: Shield{ Type: "shield", Value: 150 },
 		Level: 5,
-		Count: 15,
+		Count: 10,
 	})
 	enemies = append(enemies, Enemy{
 		Name: "Isolator Bursa",
@@ -410,33 +410,36 @@ func (e *Enemy) Kill(damages []Damage, totalDamage float64, baseDamage float64, 
 	var totalDot float64
 	for e.Health.Value > 0 {
 		ttk += 1
-		for _, damage := range damages {
-			var distribution float64 = damage.Value / totalDamage
-			if damage.Type == "viral" {
-				var proc Proc = addViralProc(e.Viral, statusChance, distribution, attackSpeed)
-				e.Viral = append(e.Viral, proc)
-			}
-
-			if damage.Type == "corrosive" {
-				var proc Proc = addCorrosiveProc(e.Corrosive, statusChance, distribution, attackSpeed)
-				e.Corrosive = append(e.Corrosive, proc)
-			}
-
-			if damage.Type == "heat" {
-				var proc Proc = addHeatProc(e.Heat, statusChance, distribution, attackSpeed)
-				e.Heat = append(e.Heat, proc)
-			}
-		}
+		var procViral Proc
+		var procCorrosive Proc
+		var procHeat Proc
 		for _, damage := range damages {
 			var distribution float64 = damage.Value / totalDamage
 			dps, avgHit, dot := e.Hit(baseDamage, baseModifier, distribution, damage, statusChance, statusDuration, avgDamageMulti, attackSpeed, factionBonus)
 			totalDps += dps
 			totalAvgHit += avgHit
 			totalDot += dot
+			if damage.Type == "viral" {
+				procViral = addViralProc(e.Viral, statusChance, distribution, attackSpeed)
+			} else if damage.Type == "corrosive" {
+				procCorrosive = addCorrosiveProc(e.Corrosive, statusChance, distribution, attackSpeed)
+			} else if damage.Type == "heat" {
+				procHeat = addHeatProc(e.Heat, statusChance, distribution, attackSpeed)
+			}
+		}
+		if procViral.Value > 0 {
+			e.Viral = append(e.Viral, procViral)
+		}
+		if procCorrosive.Value > 0 {
+			e.Corrosive = append(e.Corrosive, procCorrosive)
+		}
+		if procHeat.Value > 0 {
+			e.Heat = append(e.Heat, procHeat)
 		}
 	}
 	avgDps = totalDps / float64(ttk+1)
 	avgAvgHit = totalAvgHit / float64(ttk+1)
 	avgDot = totalDot / float64(ttk+1)
+	ttk *= e.Count
 	return
 }
