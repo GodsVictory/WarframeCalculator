@@ -7,6 +7,7 @@ import (
 	"math"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -16,7 +17,16 @@ func main() {
 	flag.IntVar(&allowedMods, "mods", 8, "Mod Slots")
 	var weaponName string
 	flag.StringVar(&weaponName, "weapon", "Orthos Prime", "Weapon to test")
+	var enemyLevelInput string
+	flag.StringVar(&enemyLevelInput, "level", "10,25,50,75,100,150", "Enemy levels")
 	flag.Parse()
+
+	var enemyLevels []int
+	for _, i := range strings.Split(enemyLevelInput, ",") {
+		t, _ := strconv.Atoi(i)
+		enemyLevels = append(enemyLevels, t)
+	}
+
 	var NGoRoutines = MaxParallelism()
 
 	weapon, err := lib.GetWeaponByName(weaponName)
@@ -56,7 +66,7 @@ func main() {
     for i := 0; i < NGoRoutines; i++ {
         go func(i int) {
             for j := i; j < totalBuilds; j += NGoRoutines {
-				var rank Rank = simulate(weapon, allModSets[j])
+				var rank Rank = simulate(weapon, allModSets[j], enemyLevels)
 				ranks[i] = append(ranks[i], rank)
             }
 			status[i] = true
@@ -186,7 +196,7 @@ func getProcCount(weapon lib.Weapon, modSet []lib.Mod) (procCount int) {
 	return
 }
 
-func simulate(weapon lib.Weapon, inModSet []lib.Mod) (stats Rank) {
+func simulate(weapon lib.Weapon, inModSet []lib.Mod, enemyLevels []int) (stats Rank) {
 	var modSet []lib.Mod = append(inModSet, weapon.Mod...)
 	var damages []lib.Damage
 	var moddedCritChance = weapon.CritChance * (1 + getModifierForType("critChance", modSet))
@@ -271,7 +281,7 @@ func simulate(weapon lib.Weapon, inModSet []lib.Mod) (stats Rank) {
 	var totalAvgHit []float64
 	var totalDot []float64
 	var totalTtk int
-	for _, lvl := range []int{10, 25, 50, 75, 100, 150} {
+	for _, lvl := range enemyLevels {
 		var enemies []lib.Enemy
 		enemies = lib.SpawnEnemies(lvl)
 		for _, e := range enemies {
