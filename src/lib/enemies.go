@@ -45,7 +45,7 @@ type Proc struct {
 	TicksLeft int
 }
 
-func (e Enemy) GetHealthAtLevel(level int) (health float64) {
+func (e Enemy) getHealthAtLevel(level int) (health float64) {
 	if level < e.Level {
 		level = e.Level
 	}
@@ -57,7 +57,7 @@ func (e Enemy) GetHealthAtLevel(level int) (health float64) {
 	return
 }
 
-func (e Enemy) GetArmorAtLevel(level int) (armor float64) {
+func (e Enemy) getArmorAtLevel(level int) (armor float64) {
 	if level < e.Level {
 		level = e.Level
 	}
@@ -69,7 +69,7 @@ func (e Enemy) GetArmorAtLevel(level int) (armor float64) {
 	return
 }
 
-func (e Enemy) GetShieldAtLevel(level int) (shield float64) {
+func (e Enemy) getShieldAtLevel(level int) (shield float64) {
 	if level < e.Level {
 		level = e.Level
 	}
@@ -81,7 +81,7 @@ func (e Enemy) GetShieldAtLevel(level int) (shield float64) {
 	return
 }
 
-func (e Enemy) GetDamageModifier(damage Damage, corrosiveEffect float64, heatEffect float64) (damageModifier float64) {
+func (e Enemy) getDamageModifier(damage Damage, corrosiveEffect float64, heatEffect float64) (damageModifier float64) {
 	var armorBonus float64 = damage.GetBonus(e.Armor.Type)
 	var armorPenalty float64 = -damage.GetPenalty(e.Armor.Type)
 	var healthBonus float64 = damage.GetBonus(e.Health.Type)
@@ -103,9 +103,9 @@ func (e Enemy) GetDamageModifier(damage Damage, corrosiveEffect float64, heatEff
 }
 
 func (e *Enemy) setStats(lvl int) {
-	e.Health.Value = e.GetHealthAtLevel(lvl)
-	e.Armor.Value = e.GetArmorAtLevel(lvl)
-	e.Shield.Value = e.GetShieldAtLevel(lvl)
+	e.Health.Value = e.getHealthAtLevel(lvl)
+	e.Armor.Value = e.getArmorAtLevel(lvl)
+	e.Shield.Value = e.getShieldAtLevel(lvl)
 	return
 }
 
@@ -350,7 +350,7 @@ func (e *Enemy) Hit(baseDamage float64, baseModifier float64, distribution float
 	}
 
 	var damageValue float64 = damage.Value * avgDamageMulti * (1 + factionBonus)
-	var damageModifier float64 = e.GetDamageModifier(damage, corrosiveEffect, heatEffect)
+	var damageModifier float64 = e.getDamageModifier(damage, corrosiveEffect, heatEffect)
 	if e.Shield.Value > 0 && damage.Type != "toxin" {
 		e.Shield.Value -= ((damageValue + currentDot) * damageModifier) / attackSpeed
 		damageInflicted = ((damageValue + currentDot) * damageModifier) / attackSpeed

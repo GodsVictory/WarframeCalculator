@@ -4,6 +4,7 @@ import (
 	"WFCalc/src/lib"
 	"flag"
 	"fmt"
+	"math"
 	"runtime"
 	"sort"
 	"strconv"
@@ -18,6 +19,10 @@ func main() {
 	flag.StringVar(&weaponName, "weapon", "Orthos Prime", "Weapon to test")
 	var enemyLevelInput string
 	flag.StringVar(&enemyLevelInput, "level", "10,25,50,75,100,150", "Enemy levels")
+	var comboMultiplier int
+	flag.IntVar(&comboMultiplier, "combo", 12, "Combo multiplier")
+	var printRanks int
+	flag.IntVar(&printRanks, "ranks", 1, "Rankings to print")
 	flag.Parse()
 
 	var enemyLevels []int
@@ -135,7 +140,7 @@ func main() {
 	for i := 0; i < NGoRoutines; i++ {
 		go func(i int) {
 			for j := i; j < totalBuilds; j += NGoRoutines {
-				var rank Rank = simulate(weapon, allModSets[j], enemyLevels)
+				var rank Rank = simulate(weapon, allModSets[j], enemyLevels, comboMultiplier)
 				ranks[i] = append(ranks[i], rank)
 			}
 			status[i] = true
@@ -183,7 +188,9 @@ func main() {
 			return parsedRanks[i].TTK < parsedRanks[j].TTK
 		}
 	})
-	printRank(parsedRanks[0])
+	for i := 0; i < printRanks; i++ {
+		printRank(parsedRanks[i])
+	}
 	return
 }
 
@@ -270,7 +277,7 @@ func getProcCount(weapon lib.Weapon, modSet []lib.Mod) (procCount int) {
 	return
 }
 
-func simulate(weapon lib.Weapon, inModSet []lib.Mod, enemyLevels []int) (stats Rank) {
+func simulate(weapon lib.Weapon, inModSet []lib.Mod, enemyLevels []int, comboMultiplier int) (stats Rank) {
 	var modSet []lib.Mod
 	for _, m := range inModSet {
 		modSet = append(modSet, m)
@@ -279,24 +286,14 @@ func simulate(weapon lib.Weapon, inModSet []lib.Mod, enemyLevels []int) (stats R
 		modSet = append(modSet, wm)
 	}
 	var damages []lib.Damage
-	var moddedCritChance = weapon.CritChance * (1 + getModifierForType("critChance", modSet))
-	var moddedCritMulti = weapon.CritMulti * (1 + getModifierForType("critMulti", modSet))
-	var moddedStatusChance = weapon.StatusChance * (1 + getModifierForType("statusChance", modSet))
-	var moddedStatusDuration = getModifierForType("statusDuration", modSet)
-	var moddedAttackSpeed = 1 / (weapon.AttackSpeed * (1 + getModifierForType("attackSpeed", modSet)) * (1 + getModifierForType("attackSpeedMulti", modSet)))
-	var avgDamageMulti = 1 + moddedCritChance*(moddedCritMulti-1)
-	var baseModifier float64
+	var moddedCritChance float64 = weapon.CritChance * (1 + (getModifierForType("critChance", modSet) + getModifierForType("critChanceCombo", modSet)*math.Max(float64(comboMultiplier-1), 0)))
+	var moddedCritMulti float64 = weapon.CritMulti * (1 + getModifierForType("critMulti", modSet))
+	var avgDamageMulti float64 = 1 + moddedCritChance*(moddedCritMulti-1)
+	var moddedStatusChance float64 = weapon.StatusChance * (1 + (getModifierForType("statusChance", modSet) + getModifierForType("statusChanceCombo", modSet)*math.Max(float64(comboMultiplier-1), 0)))
+	var moddedStatusDuration float64 = getModifierForType("statusDuration", modSet)
+	var moddedAttackSpeed float64 = 1 / (weapon.AttackSpeed * (1 + getModifierForType("attackSpeed", modSet)) * (1 + getModifierForType("attackSpeedMulti", modSet)))
 	var procCount int = getProcCount(weapon, modSet)
-
-	for _, mod := range modSet {
-		for _, modifier := range mod.Modifiers {
-			if mod.Name == "Condition Overload" {
-				baseModifier += modifier.Value * float64(procCount)
-			} else if modifier.Type == "base" {
-				baseModifier += modifier.Value
-			}
-		}
-	}
+	var baseModifier float64 = getModifierForType("base", modSet) + getModifierForType("baseProc", modSet)*float64(procCount)
 
 	var baseDamage float64
 	for _, d := range weapon.Damage {

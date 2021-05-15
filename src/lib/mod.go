@@ -10,8 +10,6 @@ type Modifier struct {
 	Value float64
 }
 
-var comboCount int = 12
-
 // var Mods []Mod = setupMods()
 var Mods []Mod = myMods()
 
@@ -74,19 +72,19 @@ func setupMods() (mods []Mod) {
 	mods = append(mods, Mod{
 		Name: "Weeping Wounds",
 		Modifiers: []Modifier{
-			{Type: "statusChance", Value: 0.4 * float64(comboCount-1)},
+			{Type: "statusChanceCombo", Value: 0.4},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Blood Rush",
 		Modifiers: []Modifier{
-			{Type: "critChance", Value: 0.6 * float64(comboCount-1)},
+			{Type: "critChanceCombo", Value: 0.6},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Condition Overload",
 		Modifiers: []Modifier{
-			{Type: "base", Value: 1.2},
+			{Type: "baseProc", Value: 1.2},
 		},
 	})
 	mods = append(mods, Mod{
@@ -190,19 +188,19 @@ func myMods() (mods []Mod) {
 	mods = append(mods, Mod{
 		Name: "Weeping Wounds",
 		Modifiers: []Modifier{
-			{Type: "statusChance", Value: 0.4 * float64(comboCount-1)},
+			{Type: "statusChanceCombo", Value: 0.4},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Blood Rush",
 		Modifiers: []Modifier{
-			{Type: "critChance", Value: 0.6 * float64(comboCount-1)},
+			{Type: "critChanceCombo", Value: 0.6},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Condition Overload",
 		Modifiers: []Modifier{
-			{Type: "base", Value: 1.2},
+			{Type: "baseProc", Value: 1.2},
 		},
 	})
 	mods = append(mods, Mod{
