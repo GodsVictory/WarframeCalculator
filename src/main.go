@@ -115,6 +115,17 @@ func main() {
 			// }
 		}
 	}
+	// sort.Slice(allModSets, func(i, j int) bool {
+	// 	for k := range allModSets[i] {
+	// 		if allModSets[i][k].Name < allModSets[j][k].Name {
+	// 			return true
+	// 		}
+	// 		if allModSets[i][k].Name > allModSets[j][k].Name {
+	// 			return false
+	// 		}
+	// 	}
+	// 	return false
+	// })
 
 	runtime.GOMAXPROCS(NGoRoutines)
 	var ranks [][]Rank = make([][]Rank, NGoRoutines)
