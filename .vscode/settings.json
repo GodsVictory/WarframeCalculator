@@ -1,10 +1,4 @@
 {
   "editor.formatOnSave": true,
-  "vetur.validation.template": false,
-  "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": true
-  },
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "eslint.format.enable": true,
   "files.eol": "\n"
 }

@@ -5,43 +5,43 @@ import (
 )
 
 type Enemy struct {
-	Name string
-	Faction string
-	Health Health
-	Armor Armor
-	Shield Shield
-	Level int
-	Count int
-	Status []Status
-	Viral []Proc
+	Name      string
+	Faction   string
+	Health    Health
+	Armor     Armor
+	Shield    Shield
+	Level     int
+	Count     int
+	Status    []Status
+	Viral     []Proc
 	Corrosive []Proc
-	Heat []Proc
+	Heat      []Proc
 }
 
 type Health struct {
-	Type string
+	Type  string
 	Value float64
 }
 
 type Armor struct {
-	Type string
+	Type  string
 	Value float64
 }
 
 type Shield struct {
-	Type string
+	Type  string
 	Value float64
 }
 
 type Status struct {
-	Type string
-	Value float64
+	Type      string
+	Value     float64
 	TicksLeft int
-	Delay int
+	Delay     int
 }
 
 type Proc struct {
-	Value float64
+	Value     float64
 	TicksLeft int
 }
 
@@ -50,9 +50,9 @@ func (e Enemy) GetHealthAtLevel(level int) (health float64) {
 		level = e.Level
 	}
 	if level < 70 {
-		health = e.Health.Value * (1 + 0.015 * math.Pow(float64(level - e.Level), 2))
+		health = e.Health.Value * (1 + 0.015*math.Pow(float64(level-e.Level), 2))
 	} else {
-		health = e.Health.Value * (1 + ((24 * math.Sqrt(5)) / 5) * math.Pow(float64(level - e.Level), 0.5))
+		health = e.Health.Value * (1 + ((24*math.Sqrt(5))/5)*math.Pow(float64(level-e.Level), 0.5))
 	}
 	return
 }
@@ -62,9 +62,9 @@ func (e Enemy) GetArmorAtLevel(level int) (armor float64) {
 		level = e.Level
 	}
 	if level < 70 {
-		armor = e.Armor.Value * (1 + 0.005 * math.Pow(float64(level - e.Level), 1.75))
+		armor = e.Armor.Value * (1 + 0.005*math.Pow(float64(level-e.Level), 1.75))
 	} else {
-		armor = e.Armor.Value * (1 + 0.4 * math.Pow(float64(level - e.Level), 0.75))
+		armor = e.Armor.Value * (1 + 0.4*math.Pow(float64(level-e.Level), 0.75))
 	}
 	return
 }
@@ -74,9 +74,9 @@ func (e Enemy) GetShieldAtLevel(level int) (shield float64) {
 		level = e.Level
 	}
 	if level < 70 {
-		shield = e.Shield.Value * (1 + 0.02 * math.Pow(float64(level - e.Level), 1.75))
+		shield = e.Shield.Value * (1 + 0.02*math.Pow(float64(level-e.Level), 1.75))
 	} else {
-		shield = e.Shield.Value * (1 + 1.6 * math.Pow(float64(level - e.Level), 0.75))
+		shield = e.Shield.Value * (1 + 1.6*math.Pow(float64(level-e.Level), 0.75))
 	}
 	return
 }
@@ -90,13 +90,13 @@ func (e Enemy) GetDamageModifier(damage Damage, corrosiveEffect float64, heatEff
 	var shieldPenalty float64 = -damage.GetPenalty(e.Shield.Type)
 	var currentArmor float64 = e.Armor.Value * (1 - corrosiveEffect) * (1 - heatEffect)
 
-    if e.Shield.Value > 0 && damage.Type != "toxin" {
+	if e.Shield.Value > 0 && damage.Type != "toxin" {
 		damageModifier = 1 + shieldBonus + shieldPenalty
 	} else if currentArmor > 0 {
-		damageModifier = (300 / (300 + currentArmor * (1 - armorBonus))) *
-        	(1 + armorBonus + armorPenalty) *
-        	(1 + healthBonus + shieldPenalty)
-    } else {
+		damageModifier = (300 / (300 + currentArmor*(1-armorBonus))) *
+			(1 + armorBonus + armorPenalty) *
+			(1 + healthBonus + shieldPenalty)
+	} else {
 		damageModifier = 1 + healthBonus + healthPenalty
 	}
 	return
@@ -111,152 +111,152 @@ func (e *Enemy) setStats(lvl int) {
 
 func SpawnEnemies(lvl int) (enemies []Enemy) {
 	enemies = append(enemies, Enemy{
-		Name: "Charger",
+		Name:    "Charger",
 		Faction: "infested",
-		Health: Health{ Type: "infested", Value: 80 },
-		Level: 1,
-		Count: 40,
+		Health:  Health{Type: "infested", Value: 80},
+		Level:   1,
+		Count:   40,
 	})
 	enemies = append(enemies, Enemy{
-		Name: "Leaper",
+		Name:    "Leaper",
 		Faction: "infested",
-		Health: Health{ Type: "infested", Value: 100 },
-		Level: 1,
-		Count: 40,
+		Health:  Health{Type: "infested", Value: 100},
+		Level:   1,
+		Count:   40,
 	})
 	enemies = append(enemies, Enemy{
-		Name: "Crawler",
+		Name:    "Crawler",
 		Faction: "infested",
-		Health: Health{ Type: "infestedFlesh", Value: 50 },
-		Level: 1,
-		Count: 30,
+		Health:  Health{Type: "infestedFlesh", Value: 50},
+		Level:   1,
+		Count:   30,
 	})
 	enemies = append(enemies, Enemy{
-		Name: "Mutalist Osprey",
+		Name:    "Mutalist Osprey",
 		Faction: "infested",
-		Health: Health{ Type: "infestedFlesh", Value: 200 },
-		Level: 10,
-		Count: 15,
+		Health:  Health{Type: "infestedFlesh", Value: 200},
+		Level:   10,
+		Count:   15,
 	})
 	enemies = append(enemies, Enemy{
-		Name: "Ancient Healer",
+		Name:    "Ancient Healer",
 		Faction: "infested",
-		Health: Health{ Type: "fossil", Value: 400 },
-		Level: 1,
-		Count: 25,
+		Health:  Health{Type: "fossil", Value: 400},
+		Level:   1,
+		Count:   25,
 	})
 	enemies = append(enemies, Enemy{
-		Name: "Brood Mother",
+		Name:    "Brood Mother",
 		Faction: "infested",
-		Health: Health{ Type: "fossil", Value: 700 },
-		Level: 12,
-		Count: 10,
+		Health:  Health{Type: "fossil", Value: 700},
+		Level:   12,
+		Count:   10,
 	})
 	enemies = append(enemies, Enemy{
-		Name: "Juggernaut",
+		Name:    "Juggernaut",
 		Faction: "infested",
-		Health: Health{ Type: "infested", Value: 3500 },
-		Armor: Armor{ Type: "ferrite", Value: 200 },
-		Level: 15,
-		Count: 1,
+		Health:  Health{Type: "infested", Value: 3500},
+		Armor:   Armor{Type: "ferrite", Value: 200},
+		Level:   15,
+		Count:   1,
 	})
 	enemies = append(enemies, Enemy{
-		Name: "Butcher",
+		Name:    "Butcher",
 		Faction: "grineer",
-		Health: Health{ Type: "cloned", Value: 50 },
-		Armor: Armor{ Type: "ferrite", Value: 5 },
-		Level: 1,
-		Count: 10,
+		Health:  Health{Type: "cloned", Value: 50},
+		Armor:   Armor{Type: "ferrite", Value: 5},
+		Level:   1,
+		Count:   10,
 	})
 	enemies = append(enemies, Enemy{
-		Name: "Lancer",
+		Name:    "Lancer",
 		Faction: "grineer",
-		Health: Health{ Type: "cloned", Value: 100 },
-		Armor: Armor{ Type: "ferrite", Value: 100 },
-		Level: 1,
-		Count: 50,
+		Health:  Health{Type: "cloned", Value: 100},
+		Armor:   Armor{Type: "ferrite", Value: 100},
+		Level:   1,
+		Count:   50,
 	})
 	enemies = append(enemies, Enemy{
-		Name: "Elite Lancer",
+		Name:    "Elite Lancer",
 		Faction: "grineer",
-		Health: Health{ Type: "cloned", Value: 150 },
-		Armor: Armor{ Type: "alloy", Value: 200 },
-		Level: 1,
-		Count: 40,
+		Health:  Health{Type: "cloned", Value: 150},
+		Armor:   Armor{Type: "alloy", Value: 200},
+		Level:   1,
+		Count:   40,
 	})
 	enemies = append(enemies, Enemy{
-		Name: "Heavy Gunner",
+		Name:    "Heavy Gunner",
 		Faction: "grineer",
-		Health: Health{ Type: "cloned", Value: 300 },
-		Armor: Armor{ Type: "alloy", Value: 500 },
-		Level: 8,
-		Count: 40,
+		Health:  Health{Type: "cloned", Value: 300},
+		Armor:   Armor{Type: "alloy", Value: 500},
+		Level:   8,
+		Count:   40,
 	})
 	enemies = append(enemies, Enemy{
-		Name: "Hyekka Master",
+		Name:    "Hyekka Master",
 		Faction: "grineer",
-		Health: Health{ Type: "cloned", Value: 650 },
-		Armor: Armor{ Type: "ferrite", Value: 50 },
-		Level: 1,
-		Count: 15,
+		Health:  Health{Type: "cloned", Value: 650},
+		Armor:   Armor{Type: "ferrite", Value: 50},
+		Level:   1,
+		Count:   15,
 	})
 	enemies = append(enemies, Enemy{
-		Name: "Nox",
+		Name:    "Nox",
 		Faction: "grineer",
-		Health: Health{ Type: "cloned", Value: 350 },
-		Armor: Armor{ Type: "alloy", Value: 250 },
-		Level: 1,
-		Count: 10,
+		Health:  Health{Type: "cloned", Value: 350},
+		Armor:   Armor{Type: "alloy", Value: 250},
+		Level:   1,
+		Count:   10,
 	})
 	enemies = append(enemies, Enemy{
-		Name: "Napalm",
+		Name:    "Napalm",
 		Faction: "grineer",
-		Health: Health{ Type: "cloned", Value: 600 },
-		Armor: Armor{ Type: "alloy", Value: 500 },
-		Level: 6,
-		Count: 20,
+		Health:  Health{Type: "cloned", Value: 600},
+		Armor:   Armor{Type: "alloy", Value: 500},
+		Level:   6,
+		Count:   20,
 	})
 	enemies = append(enemies, Enemy{
-		Name: "Crewman",
+		Name:    "Crewman",
 		Faction: "corpus",
-		Health: Health{ Type: "flesh", Value: 60 },
-		Armor: Armor{ Type: "shield", Value: 150 },
-		Level: 1,
-		Count: 50,
+		Health:  Health{Type: "flesh", Value: 60},
+		Armor:   Armor{Type: "shield", Value: 150},
+		Level:   1,
+		Count:   50,
 	})
 	enemies = append(enemies, Enemy{
-		Name: "Corpus Tech",
+		Name:    "Corpus Tech",
 		Faction: "corpus",
-		Health: Health{ Type: "flesh", Value: 700 },
-		Armor: Armor{ Type: "proto", Value: 250 },
-		Level: 15,
-		Count: 15,
+		Health:  Health{Type: "flesh", Value: 700},
+		Armor:   Armor{Type: "proto", Value: 250},
+		Level:   15,
+		Count:   15,
 	})
 	enemies = append(enemies, Enemy{
-		Name: "MOA",
+		Name:    "MOA",
 		Faction: "corpus",
-		Health: Health{ Type: "robotic", Value: 60 },
-		Shield: Shield{ Type: "shield", Value: 150 },
-		Level: 1,
-		Count: 25,
+		Health:  Health{Type: "robotic", Value: 60},
+		Shield:  Shield{Type: "shield", Value: 150},
+		Level:   1,
+		Count:   25,
 	})
 	enemies = append(enemies, Enemy{
-		Name: "Oxium Osprey",
+		Name:    "Oxium Osprey",
 		Faction: "corpus",
-		Health: Health{ Type: "robotic", Value: 750 },
-		Armor: Armor{ Type: "ferrite", Value: 40 },
-		Shield: Shield{ Type: "shield", Value: 150 },
-		Level: 5,
-		Count: 10,
+		Health:  Health{Type: "robotic", Value: 750},
+		Armor:   Armor{Type: "ferrite", Value: 40},
+		Shield:  Shield{Type: "shield", Value: 150},
+		Level:   5,
+		Count:   10,
 	})
 	enemies = append(enemies, Enemy{
-		Name: "Isolator Bursa",
+		Name:    "Isolator Bursa",
 		Faction: "corpus",
-		Health: Health{ Type: "robotic", Value: 1200 },
-		Armor: Armor{ Type: "alloy", Value: 200 },
-		Shield: Shield{ Type: "shield", Value: 700 },
-		Level: 1,
-		Count: 1,
+		Health:  Health{Type: "robotic", Value: 1200},
+		Armor:   Armor{Type: "alloy", Value: 200},
+		Shield:  Shield{Type: "shield", Value: 700},
+		Level:   1,
+		Count:   1,
 	})
 	for i := range enemies {
 		enemies[i].setStats(lvl)
@@ -276,7 +276,7 @@ func getViralProcs(procs []Proc) (value float64) {
 			value += proc.Value
 		}
 	}
-	if (value > 3.25) {
+	if value > 3.25 {
 		value = 3.25
 	}
 	return
@@ -298,7 +298,7 @@ func getCorrosiveProcs(procs []Proc) (value float64) {
 			value += proc.Value
 		}
 	}
-	if (value > 0.8) {
+	if value > 0.8 {
 		value = 0.8
 	}
 	return
@@ -320,7 +320,7 @@ func getHeatProcs(procs []Proc) (value float64) {
 			value += proc.Value
 		}
 	}
-	if (value > 0.5) {
+	if value > 0.5 {
 		value = 0.5
 	}
 	return
@@ -384,18 +384,18 @@ func (e *Enemy) Hit(baseDamage float64, baseModifier float64, distribution float
 			}
 			if heatIndex > -1 {
 				e.Status[heatIndex].Value += (damage.Dot.Damage * moddedDamage * modifier * (1 + factionBonus) * distribution * statusChance * avgDamageMulti) / attackSpeed
-				e.Status[heatIndex].TicksLeft = int(math.Floor(1 * (6 * (1 + statusDuration) - float64(damage.Dot.Delay))) + 1)
+				e.Status[heatIndex].TicksLeft = int(math.Floor(1*(6*(1+statusDuration)-float64(damage.Dot.Delay))) + 1)
 			} else {
 				status.Value = (damage.Dot.Damage * moddedDamage * modifier * (1 + factionBonus) * distribution * statusChance * avgDamageMulti) / attackSpeed
 				status.Type = damage.Type
-				status.TicksLeft = int(math.Floor(1 * (6 * (1 + statusDuration) - float64(damage.Dot.Delay))) + 1)
+				status.TicksLeft = int(math.Floor(1*(6*(1+statusDuration)-float64(damage.Dot.Delay))) + 1)
 				status.Delay = damage.Dot.Delay
 				e.Status = append(e.Status, status)
 			}
 		} else {
 			status.Value = (damage.Dot.Damage * moddedDamage * modifier * (1 + factionBonus) * distribution * statusChance * avgDamageMulti) / attackSpeed
 			status.Type = damage.Type
-			status.TicksLeft = int(math.Floor(1 * (6 * (1 + statusDuration) - float64(damage.Dot.Delay))) + 1)
+			status.TicksLeft = int(math.Floor(1*(6*(1+statusDuration)-float64(damage.Dot.Delay))) + 1)
 			status.Delay = damage.Dot.Delay
 			e.Status = append(e.Status, status)
 		}

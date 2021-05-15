@@ -1,16 +1,17 @@
 package lib
 
 type Mod struct {
-    Name string
-    Modifiers []Modifier
+	Name      string
+	Modifiers []Modifier
 }
 
 type Modifier struct {
-	Type string
+	Type  string
 	Value float64
 }
 
 var comboCount int = 12
+
 // var Mods []Mod = setupMods()
 var Mods []Mod = myMods()
 
@@ -18,102 +19,102 @@ func setupMods() (mods []Mod) {
 	mods = append(mods, Mod{
 		Name: "Primed Fever Strike",
 		Modifiers: []Modifier{
-			{ Type: "toxin", Value: 1.65 },
+			{Type: "toxin", Value: 1.65},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "North Wind",
 		Modifiers: []Modifier{
-			{ Type: "cold", Value: 0.9 },
+			{Type: "cold", Value: 0.9},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Molten Impact",
 		Modifiers: []Modifier{
-			{ Type: "heat", Value: 0.9 },
+			{Type: "heat", Value: 0.9},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Shocking Touch",
 		Modifiers: []Modifier{
-			{ Type: "electricity", Value: 0.9 },
+			{Type: "electricity", Value: 0.9},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Sacrificial Steel",
 		Modifiers: []Modifier{
-			{ Type: "critChance", Value: 2.2 },
+			{Type: "critChance", Value: 2.2},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Organ Shatter",
 		Modifiers: []Modifier{
-			{ Type: "critMulti", Value: 0.9 },
+			{Type: "critMulti", Value: 0.9},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Carnis Mandible",
 		Modifiers: []Modifier{
-			{ Type: "slash", Value: 0.9 },
-			{ Type: "statusChance", Value: 0.6 },
+			{Type: "slash", Value: 0.9},
+			{Type: "statusChance", Value: 0.6},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Primed Pressure Point",
 		Modifiers: []Modifier{
-			{ Type: "base", Value: 1.65 },
+			{Type: "base", Value: 1.65},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Berserker",
 		Modifiers: []Modifier{
-			{ Type: "attackSpeedMulti", Value: 0.75 },
+			{Type: "attackSpeedMulti", Value: 0.75},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Weeping Wounds",
 		Modifiers: []Modifier{
-			{ Type: "statusChance", Value: 0.4 * float64(comboCount - 1)},
+			{Type: "statusChance", Value: 0.4 * float64(comboCount-1)},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Blood Rush",
 		Modifiers: []Modifier{
-			{ Type: "critChance", Value: 0.6 * float64(comboCount - 1)},
+			{Type: "critChance", Value: 0.6 * float64(comboCount-1)},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Condition Overload",
 		Modifiers: []Modifier{
-			{ Type: "base", Value: 1.2 },
+			{Type: "base", Value: 1.2},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Vicious Frost",
 		Modifiers: []Modifier{
-			{ Type: "cold", Value: 0.6 },
-			{ Type: "statusChance", Value: 0.6 },
+			{Type: "cold", Value: 0.6},
+			{Type: "statusChance", Value: 0.6},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Virulent Scourge",
 		Modifiers: []Modifier{
-			{ Type: "toxin", Value: 0.6 },
-			{ Type: "statusChance", Value: 0.6 },
+			{Type: "toxin", Value: 0.6},
+			{Type: "statusChance", Value: 0.6},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Volcanic Edge",
 		Modifiers: []Modifier{
-			{ Type: "heat", Value: 0.6 },
-			{ Type: "statusChance", Value: 0.6 },
+			{Type: "heat", Value: 0.6},
+			{Type: "statusChance", Value: 0.6},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Voltaic Strike",
 		Modifiers: []Modifier{
-			{ Type: "electricity", Value: 0.6 },
-			{ Type: "statusChance", Value: 0.6 },
+			{Type: "electricity", Value: 0.6},
+			{Type: "statusChance", Value: 0.6},
 		},
 	})
 	// mods = append(mods, Mod{
@@ -134,88 +135,88 @@ func myMods() (mods []Mod) {
 	mods = append(mods, Mod{
 		Name: "Fever Strike",
 		Modifiers: []Modifier{
-			{ Type: "toxin", Value: 0.9 },
+			{Type: "toxin", Value: 0.9},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "North Wind",
 		Modifiers: []Modifier{
-			{ Type: "cold", Value: 0.9 },
+			{Type: "cold", Value: 0.9},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Molten Impact",
 		Modifiers: []Modifier{
-			{ Type: "heat", Value: 0.9 },
+			{Type: "heat", Value: 0.9},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Shocking Touch",
 		Modifiers: []Modifier{
-			{ Type: "electricity", Value: 0.9 },
+			{Type: "electricity", Value: 0.9},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "True Steel",
 		Modifiers: []Modifier{
-			{ Type: "critChance", Value: 1.2 },
+			{Type: "critChance", Value: 1.2},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Organ Shatter",
 		Modifiers: []Modifier{
-			{ Type: "critMulti", Value: 0.9 },
+			{Type: "critMulti", Value: 0.9},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Carnis Mandible",
 		Modifiers: []Modifier{
-			{ Type: "slash", Value: 0.9 },
-			{ Type: "statusChance", Value: 0.6 },
+			{Type: "slash", Value: 0.9},
+			{Type: "statusChance", Value: 0.6},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Pressure Point",
 		Modifiers: []Modifier{
-			{ Type: "base", Value: 1.2 },
+			{Type: "base", Value: 1.2},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Berserker",
 		Modifiers: []Modifier{
-			{ Type: "attackSpeedMulti", Value: 0.75 },
+			{Type: "attackSpeedMulti", Value: 0.75},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Weeping Wounds",
 		Modifiers: []Modifier{
-			{ Type: "statusChance", Value: 0.4 * float64(comboCount - 1)},
+			{Type: "statusChance", Value: 0.4 * float64(comboCount-1)},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Blood Rush",
 		Modifiers: []Modifier{
-			{ Type: "critChance", Value: 0.6 * float64(comboCount - 1)},
+			{Type: "critChance", Value: 0.6 * float64(comboCount-1)},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Condition Overload",
 		Modifiers: []Modifier{
-			{ Type: "base", Value: 1.2 },
+			{Type: "base", Value: 1.2},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Vicious Frost",
 		Modifiers: []Modifier{
-			{ Type: "cold", Value: 0.6 },
-			{ Type: "statusChance", Value: 0.6 },
+			{Type: "cold", Value: 0.6},
+			{Type: "statusChance", Value: 0.6},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Virulent Scourge",
 		Modifiers: []Modifier{
-			{ Type: "toxin", Value: 0.6 },
-			{ Type: "statusChance", Value: 0.6 },
+			{Type: "toxin", Value: 0.6},
+			{Type: "statusChance", Value: 0.6},
 		},
 	})
 	return

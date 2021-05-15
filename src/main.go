@@ -37,25 +37,24 @@ func main() {
 	elementMods, otherMods := lib.GetModArrays()
 	// var elementModsLen int = len(elementMods)
 
-
 	var allModSets [][]lib.Mod
 	var eModSet [][]lib.Mod = getCombinations(elementMods, 2)
 	for i := 0; i <= 4; i++ {
 		// var totalBuilds int = int(math.Pow(float64(elementModsLen), float64(i)))
-		var otherModSets [][]lib.Mod = getCombinations(otherMods, allowedMods - i)
+		var otherModSets [][]lib.Mod = getCombinations(otherMods, allowedMods-i)
 		for _, otherModSet := range otherModSets {
 			if hasDup(otherModSet) {
 				continue
 			}
 
 			if i == 1 {
-				for _, emod := range elementMods {			
+				for _, emod := range elementMods {
 					var modSet []lib.Mod
 					modSet = append(otherModSet, emod)
 					allModSets = append(allModSets, modSet)
 				}
 			} else if i == 2 {
-				for _, ec := range eModSet {			
+				for _, ec := range eModSet {
 					var modSet []lib.Mod
 					for _, om := range otherModSet {
 						modSet = append(modSet, om)
@@ -85,9 +84,9 @@ func main() {
 				}
 			} else if i == 4 {
 				for _, ec1 := range eModSet {
-					for _, ec2 := range eModSet {			
+					for _, ec2 := range eModSet {
 						var modSet []lib.Mod
-						for _, om := range otherModSet{
+						for _, om := range otherModSet {
 							modSet = append(modSet, om)
 						}
 						for _, ecm := range ec1 {
@@ -117,23 +116,22 @@ func main() {
 		}
 	}
 
-    runtime.GOMAXPROCS(NGoRoutines)
+	runtime.GOMAXPROCS(NGoRoutines)
 	var ranks [][]Rank = make([][]Rank, NGoRoutines)
 	var status []bool = make([]bool, NGoRoutines)
 	var totalBuilds int = len(allModSets)
 
-    for i := 0; i < NGoRoutines; i++ {
-        go func(i int) {
-            for j := i; j < totalBuilds; j += NGoRoutines {
+	for i := 0; i < NGoRoutines; i++ {
+		go func(i int) {
+			for j := i; j < totalBuilds; j += NGoRoutines {
 				var rank Rank = simulate(weapon, allModSets[j], enemyLevels)
 				ranks[i] = append(ranks[i], rank)
-            }
+			}
 			status[i] = true
-        }(i)
-    }
+		}(i)
+	}
 
 	var startTime int64 = time.Now().UnixNano() / int64(time.Second)
-	time.Sleep(1 * time.Second)
 	for i := range status {
 		for !status[i] {
 			var buildsCompleted int = 0
@@ -142,14 +140,20 @@ func main() {
 			}
 			var percentCompleted float64 = float64(buildsCompleted) / float64(totalBuilds) * 100
 			var currentTime int64 = time.Now().UnixNano() / int64(time.Second)
-			var bps int = buildsCompleted/int(currentTime - startTime)
+
+			var bps int
+			var eta int
+			if currentTime-startTime > 0 {
+				bps = buildsCompleted / int(currentTime-startTime)
+				eta = (totalBuilds - buildsCompleted) / bps
+			}
 			fmt.Printf("\r[%s%s] %5.2f%% %14s %5dbps %3ds eta",
 				strings.Repeat("#", int(percentCompleted)),
-				strings.Repeat("-", 100 - int(percentCompleted)),
+				strings.Repeat("-", 100-int(percentCompleted)),
 				percentCompleted,
 				fmt.Sprintf("(%d/%d)", buildsCompleted, totalBuilds),
 				bps,
-				(totalBuilds - buildsCompleted) / bps,
+				eta,
 			)
 			time.Sleep(50 * time.Millisecond)
 		}
@@ -226,7 +230,7 @@ func getProcCount(weapon lib.Weapon, modSet []lib.Mod) (procCount int) {
 	for _, mod := range modSet {
 		for _, modifier := range mod.Modifiers {
 			for _, element := range lib.Elements {
-				if  modifier.Type == element {
+				if modifier.Type == element {
 					activeElements = append(activeElements, element)
 				}
 			}
@@ -269,7 +273,7 @@ func simulate(weapon lib.Weapon, inModSet []lib.Mod, enemyLevels []int) (stats R
 	var moddedStatusChance = weapon.StatusChance * (1 + getModifierForType("statusChance", modSet))
 	var moddedStatusDuration = getModifierForType("statusDuration", modSet)
 	var moddedAttackSpeed = 1 / (weapon.AttackSpeed * (1 + getModifierForType("attackSpeed", modSet)) * (1 + getModifierForType("attackSpeedMulti", modSet)))
-	var avgDamageMulti = 1 + moddedCritChance * (moddedCritMulti - 1)
+	var avgDamageMulti = 1 + moddedCritChance*(moddedCritMulti-1)
 	var baseModifier float64
 	var procCount int = getProcCount(weapon, modSet)
 
@@ -282,7 +286,6 @@ func simulate(weapon lib.Weapon, inModSet []lib.Mod, enemyLevels []int) (stats R
 			}
 		}
 	}
-
 
 	var baseDamage float64
 	for _, d := range weapon.Damage {
@@ -381,31 +384,31 @@ func simulate(weapon lib.Weapon, inModSet []lib.Mod, enemyLevels []int) (stats R
 	avgDot = avgDot / float64(countDot)
 
 	return Rank{
-		Weapon: weapon.Name,
-		DPS: avgDps,
-		TTK: totalTtk,
-		AvgHit: avgHit,
-		DoT: avgDot,
-		Set: inModSet,
-		Damages: damages,
+		Weapon:       weapon.Name,
+		DPS:          avgDps,
+		TTK:          totalTtk,
+		AvgHit:       avgHit,
+		DoT:          avgDot,
+		Set:          inModSet,
+		Damages:      damages,
 		StatusChance: moddedStatusChance,
-		CritChance: moddedCritChance,
-		CritMulti: moddedCritMulti,
-		attackSpeed: weapon.AttackSpeed * (1 + getModifierForType("attackSpeed", modSet)) * (1 + getModifierForType("attackSpeedMulti", modSet)),
+		CritChance:   moddedCritChance,
+		CritMulti:    moddedCritMulti,
+		attackSpeed:  weapon.AttackSpeed * (1 + getModifierForType("attackSpeed", modSet)) * (1 + getModifierForType("attackSpeedMulti", modSet)),
 	}
 }
 
 func ConvertToLengthBase(n int, arr []lib.Mod, len int, L int) (set []lib.Mod) {
 	for i := 0; i < L; i++ {
 		for _, m := range set {
-			if m.Name == arr[n % len].Name {
+			if m.Name == arr[n%len].Name {
 				set = []lib.Mod{}
 				return
 			}
 		}
-        set = append(set, arr[n % len])
-        n = int(n / len)
-    }
+		set = append(set, arr[n%len])
+		n = int(n / len)
+	}
 	return
 }
 
@@ -421,15 +424,15 @@ func hasDup(mods []lib.Mod) (result bool) {
 }
 
 func combinationUtil(arr []lib.Mod, data []lib.Mod, start int, end int, index int, r int, sets *[][]lib.Mod) (set []lib.Mod) {
-	if (index == r)	{
-		for j :=0; j < r; j++ {
+	if index == r {
+		for j := 0; j < r; j++ {
 			set = append(set, data[j])
 		}
 		*sets = append(*sets, set)
 		return
 	}
 	for i := start; i <= end && end-i+1 >= r-index; i++ {
-		data[index] = arr[i];
+		data[index] = arr[i]
 		combinationUtil(arr, data, i+1, end, index+1, r, sets)
 	}
 	return
@@ -453,15 +456,15 @@ func MaxParallelism() int {
 }
 
 type Rank struct {
-	Weapon string
-	DPS float64
-	TTK int
-	AvgHit float64
-	DoT float64
-	Set []lib.Mod
-	Damages []lib.Damage
+	Weapon       string
+	DPS          float64
+	TTK          int
+	AvgHit       float64
+	DoT          float64
+	Set          []lib.Mod
+	Damages      []lib.Damage
 	StatusChance float64
-	CritChance float64
-	CritMulti float64
-	attackSpeed float64
+	CritChance   float64
+	CritMulti    float64
+	attackSpeed  float64
 }
