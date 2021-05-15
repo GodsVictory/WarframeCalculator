@@ -4,7 +4,6 @@ import (
 	"WFCalc/src/lib"
 	"flag"
 	"fmt"
-	"math"
 	"runtime"
 	"sort"
 	"strconv"
@@ -36,25 +35,85 @@ func main() {
 	}
 
 	elementMods, otherMods := lib.GetModArrays()
-	var elementModsLen int = len(elementMods)
+	// var elementModsLen int = len(elementMods)
+
 
 	var allModSets [][]lib.Mod
+	var eModSet [][]lib.Mod = getCombinations(elementMods, 2)
 	for i := 0; i <= 4; i++ {
-		var totalBuilds int = int(math.Pow(float64(elementModsLen), float64(i)))
+		// var totalBuilds int = int(math.Pow(float64(elementModsLen), float64(i)))
 		var otherModSets [][]lib.Mod = getCombinations(otherMods, allowedMods - i)
 		for _, otherModSet := range otherModSets {
 			if hasDup(otherModSet) {
 				continue
 			}
-			for j := 0; j < totalBuilds; j++ {
-				var elementModSet []lib.Mod = ConvertToLengthBase(j, elementMods, elementModsLen, i)
-				var modSet []lib.Mod
-				modSet = append(otherModSet, elementModSet...)
-				if len(modSet) < allowedMods {
-					continue
+
+			if i == 1 {
+				for _, emod := range elementMods {			
+					var modSet []lib.Mod
+					modSet = append(otherModSet, emod)
+					allModSets = append(allModSets, modSet)
 				}
-				allModSets = append(allModSets, modSet)
+			} else if i == 2 {
+				for _, ec := range eModSet {			
+					var modSet []lib.Mod
+					for _, om := range otherModSet {
+						modSet = append(modSet, om)
+					}
+					for _, ecm := range ec {
+						modSet = append(modSet, ecm)
+					}
+					if !hasDup(modSet) {
+						allModSets = append(allModSets, modSet)
+					}
+				}
+			} else if i == 3 {
+				for _, ec := range eModSet {
+					for _, emod := range elementMods {
+						var modSet []lib.Mod
+						for _, om := range otherModSet {
+							modSet = append(modSet, om)
+						}
+						for _, ecm := range ec {
+							modSet = append(modSet, ecm)
+						}
+						modSet = append(modSet, emod)
+						if !hasDup(modSet) {
+							allModSets = append(allModSets, modSet)
+						}
+					}
+				}
+			} else if i == 4 {
+				for _, ec1 := range eModSet {
+					for _, ec2 := range eModSet {			
+						var modSet []lib.Mod
+						for _, om := range otherModSet{
+							modSet = append(modSet, om)
+						}
+						for _, ecm := range ec1 {
+							modSet = append(modSet, ecm)
+						}
+						for _, ecm := range ec2 {
+							modSet = append(modSet, ecm)
+						}
+						if !hasDup(modSet) {
+							allModSets = append(allModSets, modSet)
+						}
+					}
+				}
 			}
+			// for j := 0; j < totalBuilds; j++ {
+			// 	var elementModSet []lib.Mod = ConvertToLengthBase(j, elementMods, elementModsLen, i)
+			// 	if len(elementModSet) != i {continue}
+			// 	var modSet []lib.Mod
+			// 	for _, om := range otherModSet {
+			// 		modSet = append(modSet, om)
+			// 	}
+			// 	for _, em := range elementModSet {
+			// 		modSet = append(modSet, em)
+			// 	}
+			// 	allModSets = append(allModSets, modSet)
+			// }
 		}
 	}
 
@@ -197,7 +256,13 @@ func getProcCount(weapon lib.Weapon, modSet []lib.Mod) (procCount int) {
 }
 
 func simulate(weapon lib.Weapon, inModSet []lib.Mod, enemyLevels []int) (stats Rank) {
-	var modSet []lib.Mod = append(inModSet, weapon.Mod...)
+	var modSet []lib.Mod
+	for _, m := range inModSet {
+		modSet = append(modSet, m)
+	}
+	for _, wm := range weapon.Mod {
+		modSet = append(modSet, wm)
+	}
 	var damages []lib.Damage
 	var moddedCritChance = weapon.CritChance * (1 + getModifierForType("critChance", modSet))
 	var moddedCritMulti = weapon.CritMulti * (1 + getModifierForType("critMulti", modSet))
