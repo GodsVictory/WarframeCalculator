@@ -124,12 +124,12 @@ func setupMods() (mods []Mod) {
 	return
 }
 func myMods() (mods []Mod) {
-	// mods = append(mods, Mod{
-	// 	Name: "Fury",
-	// 	Modifiers: []Modifier{
-	// 		{ Type: "attackSpeed", Value: 0.3 },
-	// 	},
-	// })
+	mods = append(mods, Mod{
+		Name: "Fury",
+		Modifiers: []Modifier{
+			{Type: "attackSpeed", Value: 0.3},
+		},
+	})
 	mods = append(mods, Mod{
 		Name: "Fever Strike",
 		Modifiers: []Modifier{

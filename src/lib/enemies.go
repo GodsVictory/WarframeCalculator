@@ -403,13 +403,16 @@ func (e *Enemy) Hit(baseDamage float64, baseModifier float64, distribution float
 	return
 }
 
-func (e *Enemy) Kill(damages []Damage, totalDamage float64, baseDamage float64, baseModifier float64, statusChance float64, statusDuration float64, avgDamageMulti float64, attackSpeed float64, factionBonus float64) (ttk int, avgDps float64, avgAvgHit float64, avgDot float64) {
+func (e *Enemy) Kill(damages []Damage, totalDamage float64, baseDamage float64, baseModifier float64, statusChance float64, statusDuration float64, avgDamageMulti float64, attackSpeed float64, factionBonus float64, currentBestTTK int) (ttk int, avgDps float64, avgAvgHit float64, avgDot float64) {
 	ttk = -1
 	var totalDps float64
 	var totalAvgHit float64
 	var totalDot float64
 	for e.Health.Value > 0 {
 		ttk += 1
+		if ttk > currentBestTTK && currentBestTTK != 0 {
+			return
+		}
 		var procViral Proc
 		var procCorrosive Proc
 		var procHeat Proc

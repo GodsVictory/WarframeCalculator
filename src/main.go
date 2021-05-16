@@ -136,12 +136,24 @@ func main() {
 	var ranks [][]Rank = make([][]Rank, NGoRoutines)
 	var status []bool = make([]bool, NGoRoutines)
 	var totalBuilds int = len(allModSets)
+	var bestBuild []int = make([]int, NGoRoutines)
+	var buildsCompleted []int = make([]int, NGoRoutines)
 
 	for i := 0; i < NGoRoutines; i++ {
 		go func(i int) {
 			for j := i; j < totalBuilds; j += NGoRoutines {
-				var rank Rank = simulate(weapon, allModSets[j], enemyLevels, comboMultiplier)
-				ranks[i] = append(ranks[i], rank)
+				var currentBestTTK int
+				for _, bb := range bestBuild {
+					if bb < currentBestTTK || currentBestTTK == 0 {
+						currentBestTTK = bb
+					}
+				}
+				var rank Rank = simulate(weapon, allModSets[j], enemyLevels, comboMultiplier, int(float64(currentBestTTK)*1.1))
+				buildsCompleted[i]++
+				if rank.TTK != 0 && rank.TTK < bestBuild[i] || bestBuild[i] == 0 {
+					bestBuild[i] = rank.TTK
+					ranks[i] = append(ranks[i], rank)
+				}
 			}
 			status[i] = true
 		}(i)
@@ -150,26 +162,35 @@ func main() {
 	var startTime int64 = time.Now().UnixNano() / int64(time.Second)
 	for i := range status {
 		for !status[i] {
-			var buildsCompleted int = 0
-			for _, v := range ranks {
-				buildsCompleted += len(v)
+			var totalBuildsCompleted int = 0
+			for _, v := range buildsCompleted {
+				totalBuildsCompleted += v
 			}
-			var percentCompleted float64 = float64(buildsCompleted) / float64(totalBuilds) * 100
+			var percentCompleted float64 = float64(totalBuildsCompleted) / float64(totalBuilds) * 100
 			var currentTime int64 = time.Now().UnixNano() / int64(time.Second)
 
 			var bps int
 			var eta int
 			if currentTime-startTime > 0 {
-				bps = buildsCompleted / int(currentTime-startTime)
-				eta = (totalBuilds - buildsCompleted) / bps
+				bps = totalBuildsCompleted / int(currentTime-startTime)
+				if bps > 0 {
+					eta = (totalBuilds - totalBuildsCompleted) / bps
+				}
 			}
-			fmt.Printf("\r[%s%s] %5.2f%% %14s %5dbps %3ds eta",
+			var currentBestTTK int
+			for _, bb := range bestBuild {
+				if bb < currentBestTTK || currentBestTTK == 0 {
+					currentBestTTK = bb
+				}
+			}
+			fmt.Printf("\r[%s%s] %5.2f%% %14s %5dbps %3ds eta %5d",
 				strings.Repeat("#", int(percentCompleted)),
 				strings.Repeat("-", 100-int(percentCompleted)),
 				percentCompleted,
-				fmt.Sprintf("(%d/%d)", buildsCompleted, totalBuilds),
+				fmt.Sprintf("(%d/%d)", totalBuildsCompleted, totalBuilds),
 				bps,
 				eta,
+				currentBestTTK,
 			)
 			time.Sleep(50 * time.Millisecond)
 		}
@@ -277,7 +298,7 @@ func getProcCount(weapon lib.Weapon, modSet []lib.Mod) (procCount int) {
 	return
 }
 
-func simulate(weapon lib.Weapon, inModSet []lib.Mod, enemyLevels []int, comboMultiplier int) (stats Rank) {
+func simulate(weapon lib.Weapon, inModSet []lib.Mod, enemyLevels []int, comboMultiplier int, currentBestTTK int) (stats Rank) {
 	var modSet []lib.Mod
 	for _, m := range inModSet {
 		modSet = append(modSet, m)
@@ -361,11 +382,14 @@ func simulate(weapon lib.Weapon, inModSet []lib.Mod, enemyLevels []int, comboMul
 		var enemies []lib.Enemy
 		enemies = lib.SpawnEnemies(lvl)
 		for _, e := range enemies {
-			ttk, dps, avgHit, dot := e.Kill(damages, totalDamage, baseDamage, baseModifier, moddedStatusChance, moddedStatusDuration, avgDamageMulti, moddedAttackSpeed, getModifierForType(e.Faction, modSet))
+			ttk, dps, avgHit, dot := e.Kill(damages, totalDamage, baseDamage, baseModifier, moddedStatusChance, moddedStatusDuration, avgDamageMulti, moddedAttackSpeed, getModifierForType(e.Faction, modSet), currentBestTTK)
 			totalDps = append(totalDps, dps)
 			totalAvgHit = append(totalAvgHit, avgHit)
 			totalDot = append(totalDot, dot)
 			totalTtk += ttk
+			if totalTtk > currentBestTTK && currentBestTTK != 0 {
+				return
+			}
 		}
 	}
 
