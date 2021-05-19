@@ -183,9 +183,9 @@ func main() {
 					currentBestTTK = bb
 				}
 			}
-			fmt.Printf("\r[%s%s] %5.2f%% %14s %5dbps %3ds eta %5d",
-				strings.Repeat("#", int(percentCompleted)),
-				strings.Repeat("-", 100-int(percentCompleted)),
+			fmt.Printf("\r[%s%s] %5.2f%% %14s %5dbps %5ds eta %7d best ttk",
+				strings.Repeat("#", int(percentCompleted)/2),
+				strings.Repeat("-", 50-int(percentCompleted)/2),
 				percentCompleted,
 				fmt.Sprintf("(%d/%d)", totalBuildsCompleted, totalBuilds),
 				bps,
