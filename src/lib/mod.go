@@ -11,6 +11,7 @@ type Modifier struct {
 }
 
 // var Mods []Mod = setupMods()
+
 var Mods []Mod = myMods()
 
 func setupMods() (mods []Mod) {
@@ -180,9 +181,9 @@ func myMods() (mods []Mod) {
 		},
 	})
 	mods = append(mods, Mod{
-		Name: "Berserker",
+		Name: "Berserker Fury",
 		Modifiers: []Modifier{
-			{Type: "attackSpeedMulti", Value: 0.75},
+			{Type: "attackSpeedMulti", Value: 0.7},
 		},
 	})
 	mods = append(mods, Mod{
@@ -194,13 +195,13 @@ func myMods() (mods []Mod) {
 	mods = append(mods, Mod{
 		Name: "Blood Rush",
 		Modifiers: []Modifier{
-			{Type: "critChanceCombo", Value: 0.6},
+			{Type: "critChanceCombo", Value: 0.4},
 		},
 	})
 	mods = append(mods, Mod{
 		Name: "Condition Overload",
 		Modifiers: []Modifier{
-			{Type: "baseProc", Value: 1.2},
+			{Type: "baseProc", Value: .8},
 		},
 	})
 	mods = append(mods, Mod{

@@ -87,6 +87,18 @@ func setupWeapons() (weapons []Weapon) {
 		CritMulti:    2.0,
 		StatusChance: 0.37,
 	})
+	weapons = append(weapons, Weapon{
+		Name:        "Exalted Umbra Blade",
+		AttackSpeed: 1.1,
+		Damage: []WeaponDamage{
+			{Type: "impact", Value: 68.1},
+			{Type: "puncture", Value: 68.1},
+			{Type: "slash", Value: 317.8},
+		},
+		CritChance:   0.15,
+		CritMulti:    2.0,
+		StatusChance: 0.15,
+	})
 	return
 }
 
